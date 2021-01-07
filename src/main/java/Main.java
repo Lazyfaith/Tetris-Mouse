@@ -1,6 +1,7 @@
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
+import game.GameManager;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -102,13 +103,13 @@ class Main {
         buzz(100);
 
         try {
-            new Game().run(imageData1 -> {
+            new GameManager(imageData1 -> {
                 try {
                     show(imageData1);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            });
+            }).playNewGame();
         } catch (Exception ex) {
             ex.printStackTrace();
         }

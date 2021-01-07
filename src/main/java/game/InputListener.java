@@ -1,3 +1,5 @@
+package game;
+
 import org.jnativehook.GlobalScreen;
 import org.jnativehook.mouse.NativeMouseAdapter;
 import org.jnativehook.mouse.NativeMouseEvent;
@@ -66,7 +68,16 @@ class InputListener {
         listenersAttached = false;
     }
 
-    int getNewLeftClicks() {
+    NewUserInput getNewInput() {
+        return new NewUserInput(
+                getNewLeftClicks(),
+                getNewRightClicks(),
+                getNewScrollUps(),
+                getNewScrollDowns()
+        );
+    }
+
+    private int getNewLeftClicks() {
         synchronized (leftLock) {
             int val = leftClicks;
             leftClicks = 0;
@@ -74,7 +85,7 @@ class InputListener {
         }
     }
 
-    int getNewRightClicks() {
+    private int getNewRightClicks() {
         synchronized (rightLock) {
             int val = rightClicks;
             rightClicks = 0;
@@ -82,7 +93,7 @@ class InputListener {
         }
     }
 
-    int getNewScrollUps() {
+    private int getNewScrollUps() {
         synchronized (wheelScrollLock) {
             int val = scrollUps;
             scrollUps = 0;
@@ -90,7 +101,7 @@ class InputListener {
         }
     }
 
-    int getNewScrollDowns() {
+    private int getNewScrollDowns() {
         synchronized (wheelScrollLock) {
             int val = scrollDowns;
             scrollDowns = 0;

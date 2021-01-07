@@ -1,24 +1,9 @@
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
+package game;
+
 import java.util.Arrays;
 import java.util.Random;
-import java.util.function.Consumer;
-import javax.imageio.ImageIO;
 
-class Game {
-
-    static {
-        try {
-            SCORE_CHAR_MAP = ImageIO.read(Game.class.getResource("/char_map_6x12.bmp"));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static final BufferedImage SCORE_CHAR_MAP;
-    private static final int CHAR_WIDTH = 6;
-    private static final int CHAR_HEIGHT = 12;
+class GameCore {
 
     // First pair are the rotate space of the shape, subsequent pairs are the initial tiles positions in the space
     private static final int [][][] PIECES = {
@@ -36,15 +21,12 @@ class Game {
             { {3, 3}, {1, 0}, {0, 1}, {1, 1}, {2, 1} }
     };
 
-    private static final int DISPLAY_SHORT = 36;
-    private static final int DISPLAY_LONG = 128;
-    private static final int TICKS_PER_SECOND = 15;
-    private static final int BOARD_W = 10;
-    private static final int BOARD_H = 20;
+    public static final int BOARD_W = 10;
+    public static final int BOARD_H = 20;
+
     private static final int INITIAL_FALL_DELAY = 11;
     private static final int MAX_LEVEL = INITIAL_FALL_DELAY - 1;
 
-    private final InputListener input = new InputListener();
     private final Random rng = new Random();
 
     // [0, 0] is top left corner
@@ -59,40 +41,7 @@ class Game {
     private int rowsCleared = 0;
     private int rowsSoftDropped = 0;
 
-    public void run(Consumer<int[]> renderOut) {
-        input.listenToMouseEvents();
-
-        try {
-            startTickLoop(renderOut);
-        } finally {
-            input.stopListeningToMouseEvents();
-        }
-    }
-
-    private void startTickLoop(Consumer<int[]> renderOut) {
-        long startTime = System.currentTimeMillis();
-        long tick = 0;
-        int tickTime = 1000 / TICKS_PER_SECOND; // Roughly
-        while (true) {
-            long now = System.currentTimeMillis();
-
-            if (now >= startTime + (tick * tickTime)) {
-                boolean renderChange = tick();
-                if (renderChange || tick == 0) {
-                    render(renderOut);
-                }
-                tick++;
-            } else {
-                try {
-                    Thread.sleep(tickTime / 5);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private boolean tick() {
+    public boolean tick(NewUserInput input) {
         boolean renderChange = false;
         if (active == null) {
             boolean canPlace = placeNewActivePiece();
@@ -103,7 +52,7 @@ class Game {
             }
         }
 
-        renderChange |= processUserInput();
+        renderChange |= processUserInput(input);
 
         fallDelay--;
         if (fallDelay > 0) {
@@ -179,12 +128,11 @@ class Game {
         return true;
     }
 
-    private boolean processUserInput() {
+    private boolean processUserInput(NewUserInput input) {
         boolean renderChange = false;
 
-        int leftClicks = input.getNewLeftClicks();
-        if (leftClicks > 0) {
-            for (int i = 0; i < leftClicks; i++) {
+        if (input.leftClicks > 0) {
+            for (int i = 0; i < input.leftClicks; i++) {
                 if (isLegalMove(active, activeX - 1, activeY)) {
                     activeX--;
                     renderChange = true;
@@ -193,9 +141,8 @@ class Game {
                 }
             }
         }
-        int rightClicks = input.getNewRightClicks();
-        if (rightClicks > 0) {
-            for (int i = 0; i < rightClicks; i++) {
+        if (input.rightClicks > 0) {
+            for (int i = 0; i < input.rightClicks; i++) {
                 if (isLegalMove(active, activeX + 1, activeY)) {
                     activeX++;
                     renderChange = true;
@@ -204,9 +151,8 @@ class Game {
                 }
             }
         }
-        int scrollUps = input.getNewScrollUps();
-        if (scrollUps > 0) {
-            for (int i = 0; i < scrollUps; i++) {
+        if (input.scrollUps > 0) {
+            for (int i = 0; i < input.scrollUps; i++) {
                 boolean[][] rotated = rotate(active);
                 if (isLegalMove(rotated, activeX, activeY)) {
                     active = rotated;
@@ -216,9 +162,8 @@ class Game {
                 }
             }
         }
-        int scrollDowns = input.getNewScrollDowns();
-        if (scrollDowns > 0) {
-            for (int i = 0; i < scrollDowns; i++) {
+        if (input.scrollDowns > 0) {
+            for (int i = 0; i < input.scrollDowns; i++) {
                 if (isLegalMove(active, activeX, activeY + 1)) {
                     activeY++;
                     rowsSoftDropped++;
@@ -283,107 +228,23 @@ class Game {
         throw new AssertionError("Unexpected number of rows removed: " + numRemoved);
     }
 
-    private void render(Consumer<int[]> renderOut) {
-        // Think of as vertical display (thin & tall)
-        boolean[][] pixels = new boolean[DISPLAY_SHORT][DISPLAY_LONG];
-
-        int blockSize = 3;
-
-        // Paint 1 pixel border around the board area
-        int bw = 1; // border width
-        drawRect(pixels, 0, 0, BOARD_W * blockSize + bw * 2, BOARD_H * blockSize + bw * 2);
-
-        // Draw the active tiles
-        if (active != null) {
-            for (int tx = 0; tx < active.length; tx++) {
-                for (int ty = 0; ty < active[0].length; ty++) {
-                    if (active[tx][ty]) {
-                        fillRect(pixels, (activeX + tx) * blockSize + bw, (activeY + ty) * blockSize + bw, blockSize, blockSize);
-                    }
-                }
-            }
-        }
-        // Draw settled tiles on the board
-        for (int x = 0; x < board.length; x++) {
-            for (int y = 0; y < board[0].length; y++) {
-                if (board[x][y]) {
-                    drawRect(pixels, x * blockSize + bw, y * blockSize + bw, blockSize, blockSize);
-                }
-            }
-        }
-
-        // Draw score
-        int scoreToDraw = Math.min(score, 999999);
-        int charsY = (BOARD_H + 2) * blockSize;
-        char[] scoreDigits = String.format("%06d", scoreToDraw).toCharArray();
-        for (int i = 0; i < 6; i++) {
-            drawNum(pixels, CHAR_WIDTH * i, charsY, Character.digit(scoreDigits[i], 10));
-        }
-
-//        debug_printPixels(pixels);
-
-        renderOut.accept(convertPixelsToInts(pixels));
+    public boolean[][] getBoard() {
+        return board;
     }
 
-    private static void drawRect(boolean[][] arr, int x, int y, int w, int h) {
-        for (int i = x; i < x + w; i++) {
-            arr[i][y] = true;
-            arr[i][y + h - 1] = true;
-        }
-        for (int i = y; i < y + h; i++) {
-            arr[x][i] = true;
-            arr[x + w - 1][i] = true;
-        }
+    public boolean[][] getActivePiece() {
+        return active;
     }
 
-    private static void fillRect(boolean[][] arr, int x, int y, int w, int h) {
-        for (int ix = x; ix < x + w; ix++) {
-            for (int iy = y; iy < y + h; iy++) {
-                arr[ix][iy] = true;
-            }
-        }
+    public int getScore() {
+        return score;
     }
 
-    private static void drawNum(boolean[][] arr, int x, int y, int numDigit) {
-        assert 0 <= numDigit && numDigit < 10;
-        if (SCORE_CHAR_MAP == null) {
-            return;
-        }
-
-        for (int cx = 0; cx < CHAR_WIDTH; cx++) {
-            for (int cy = 0; cy < CHAR_HEIGHT; cy++) {
-                int col = SCORE_CHAR_MAP.getRGB(numDigit * CHAR_WIDTH + cx, cy);
-                if (col == Color.BLACK.getRGB()) {
-                    arr[x + cx][y + cy] = true;
-                }
-            }
-        }
+    public int getActiveX() {
+        return activeX;
     }
 
-    private int[] convertPixelsToInts(boolean[][] pixels) {
-        int[] render = new int[DISPLAY_LONG * DISPLAY_SHORT / 8];
-        for (int x = 0; x < DISPLAY_LONG; x++) {
-            for (int y = 0; y < DISPLAY_SHORT; y++) {
-                // Rotating the pixel grid 90 anticlockwise to show on horizontal screen (short and wide)
-                if (pixels[DISPLAY_SHORT - y - 1][x]) {
-                    int bit = x + (y * DISPLAY_LONG);
-                    int byteInArr = bit / 8;
-                    int bitInByte = bit % 8;
-                    render[byteInArr] = render[byteInArr] | 1 << (7 - bitInByte);
-                }
-            }
-        }
-        return render;
-    }
-
-    private void debug_printPixels(boolean[][] pixels) {
-        StringBuilder sb = new StringBuilder();
-        for (int y = 0; y < DISPLAY_LONG; y++) {
-            for (int x = 0; x < DISPLAY_SHORT; x++) {
-                sb.append(pixels[x][y] ? "X" : ".");
-            }
-            sb.append("\n");
-        }
-        System.out.println("\n\n" + sb + "\n\n");
+    public int getActiveY() {
+        return activeY;
     }
 }
