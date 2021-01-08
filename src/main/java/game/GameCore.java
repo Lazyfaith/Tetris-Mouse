@@ -41,14 +41,14 @@ class GameCore {
     private int rowsCleared = 0;
     private int rowsSoftDropped = 0;
 
-    public boolean tick(NewUserInput input) {
+    public TickResult tick(NewUserInput input) {
         boolean renderChange = false;
         if (active == null) {
             boolean canPlace = placeNewActivePiece();
             renderChange = true;
 
             if (!canPlace) {
-                //TODO: end game!
+                return TickResult.GAME_OVER;
             }
         }
 
@@ -56,7 +56,7 @@ class GameCore {
 
         fallDelay--;
         if (fallDelay > 0) {
-            return renderChange;
+            return renderChange ? TickResult.VISUAL_CHANGE : TickResult.RUNNING;
         }
 
         boolean pieceLands = !isLegalMove(active, activeX, activeY + 1);
@@ -79,7 +79,7 @@ class GameCore {
             activeY++;
         }
         fallDelay = currentFallDelay();
-        return true;
+        return TickResult.VISUAL_CHANGE;
     }
 
     private boolean placeNewActivePiece() {
@@ -246,5 +246,9 @@ class GameCore {
 
     public int getActiveY() {
         return activeY;
+    }
+
+    public int getLevel() {
+        return level;
     }
 }

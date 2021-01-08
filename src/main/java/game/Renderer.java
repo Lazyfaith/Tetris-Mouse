@@ -10,6 +10,8 @@ class Renderer {
     static {
         try {
             SCORE_CHAR_MAP = ImageIO.read(GameCore.class.getResource("/char_map_6x12.bmp"));
+            GAME_OVER_TEXT = ImageIO.read(GameCore.class.getResource("/game_over.bmp"));
+            LVL_TEXT = ImageIO.read(GameCore.class.getResource("/text_lvl.bmp"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -18,6 +20,8 @@ class Renderer {
     private static final BufferedImage SCORE_CHAR_MAP;
     private static final int CHAR_WIDTH = 6;
     private static final int CHAR_HEIGHT = 12;
+    private static final BufferedImage GAME_OVER_TEXT;
+    private static final BufferedImage LVL_TEXT;
 
     private static final int DISPLAY_SHORT = 36;
     private static final int DISPLAY_LONG = 128;
@@ -64,12 +68,8 @@ class Renderer {
         }
 
         // Draw score
-        int scoreToDraw = Math.min(game.getScore(), 999999);
         int charsY = (GameCore.BOARD_H + 2) * blockSize;
-        char[] scoreDigits = String.format("%06d", scoreToDraw).toCharArray();
-        for (int i = 0; i < 6; i++) {
-            drawNum(pixels, CHAR_WIDTH * i, charsY, Character.digit(scoreDigits[i], 10));
-        }
+        drawScore(pixels, charsY);
 
 //        debug_printPixels(pixels);
 
@@ -95,17 +95,34 @@ class Renderer {
         }
     }
 
-    private static void drawNum(boolean[][] pixels, int x, int y, int numDigit) {
+    private void drawScore(boolean[][] pixels, int y) {
+        int numToDisplay = Math.min(game.getScore(), 999999);
+        char[] numDigits = String.format("%06d", numToDisplay).toCharArray();
+        // Always display at x = 0 since the 6 digits can take up the whole width
+        drawNumber(pixels, numDigits, 0, y);
+    }
+
+    private void drawNumber(boolean[][] pixels, char[] numDigits, int x, int y) {
+        for (int i = 0; i < numDigits.length; i++) {
+            drawNumDigit(pixels, x + CHAR_WIDTH * i , y, Character.digit(numDigits[i], 10));
+        }
+    }
+
+    private static void drawNumDigit(boolean[][] pixels, int x, int y, int numDigit) {
         assert 0 <= numDigit && numDigit < 10;
         if (SCORE_CHAR_MAP == null) {
             return;
         }
+        BufferedImage charTile = SCORE_CHAR_MAP.getSubimage(numDigit * CHAR_WIDTH, 0, CHAR_WIDTH, CHAR_HEIGHT);
+        drawImage(pixels, charTile, x, y);
+    }
 
-        for (int cx = 0; cx < CHAR_WIDTH; cx++) {
-            for (int cy = 0; cy < CHAR_HEIGHT; cy++) {
-                int col = SCORE_CHAR_MAP.getRGB(numDigit * CHAR_WIDTH + cx, cy);
+    private static void drawImage(boolean[][] pixels, BufferedImage img, int x, int y) {
+        for (int px = 0; px < img.getWidth(); px++) {
+            for (int py = 0; py < img.getHeight(); py++) {
+                int col = img.getRGB(px, py);
                 if (col == Color.BLACK.getRGB()) {
-                    pixels[x + cx][y + cy] = true;
+                    pixels[x + px][y + py] = true;
                 }
             }
         }
@@ -125,6 +142,28 @@ class Renderer {
             }
         }
         return render;
+    }
+
+    public void showGameOverScreen() {
+        boolean[][] pixels = new boolean[DISPLAY_SHORT][DISPLAY_LONG];
+        int y = 0;
+        drawImage(pixels, GAME_OVER_TEXT, 0, y);
+        y += GAME_OVER_TEXT.getHeight() + 10;
+        drawScore(pixels, y);
+        y += CHAR_HEIGHT + 10;
+        drawLevel(pixels, y);
+
+//        debug_printPixels(pixels);
+
+        renderOut.accept(convertPixelsToInts(pixels));
+    }
+
+    private void drawLevel(boolean[][] pixels, int y) {
+        drawImage(pixels, LVL_TEXT, 0, y);
+        char[] scoreDigits = String.format("%d", game.getLevel()).toCharArray();
+        int lvlX = DISPLAY_SHORT - 2 - scoreDigits.length * CHAR_WIDTH;
+        int lvlY = y + LVL_TEXT.getHeight() + 2;
+        drawNumber(pixels, scoreDigits, lvlX, lvlY);
     }
 
     private void debug_printPixels(boolean[][] pixels) {

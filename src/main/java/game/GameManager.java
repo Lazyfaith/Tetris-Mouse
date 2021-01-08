@@ -33,8 +33,11 @@ public class GameManager {
             long now = System.currentTimeMillis();
 
             if (now >= startTime + (tick * tickTime)) {
-                boolean renderChange = activeGame.tick(inputListener.getNewInput());
-                if (renderChange || tick == 0) {
+                TickResult result = activeGame.tick(inputListener.getNewInput());
+                if (result == TickResult.GAME_OVER) {
+                    break;
+                }
+                if (result == TickResult.VISUAL_CHANGE || tick == 0) {
                     renderer.renderGame();
                 }
                 tick++;
@@ -46,5 +49,7 @@ public class GameManager {
                 }
             }
         }
+
+        renderer.showGameOverScreen();
     }
 }
