@@ -69,10 +69,7 @@ class Renderer {
             }
         }
 
-        // Draw score
-        int scoreY = (GameCore.BOARD_H + 2) * blockSize;
-        drawImage(pixels, SCORE_TEXT, 0, scoreY);
-        drawScore(pixels, scoreY + SCORE_TEXT.getHeight() + 2);
+        drawScoreAndLevelDisplays(pixels);
 
 //        debug_printPixels(pixels);
 
@@ -98,7 +95,18 @@ class Renderer {
         }
     }
 
-    private void drawScore(boolean[][] pixels, int y) {
+    private void drawScoreAndLevelDisplays(boolean[][] pixels) {
+        int y = 70; // Displays it as far down the screen as possible, with current sizes of images and spacing
+        drawImage(pixels, SCORE_TEXT, 0, y);
+        y += SCORE_TEXT.getHeight() + 2;
+        drawScoreNumber(pixels, y);
+        y += CHAR_HEIGHT;
+        drawImage(pixels, LVL_TEXT, 0, y);
+        y += LVL_TEXT.getHeight();
+        drawLevelNumber(pixels, y);
+    }
+
+    private void drawScoreNumber(boolean[][] pixels, int y) {
         int numToDisplay = Math.min(game.getScore(), 999999);
         char[] numDigits = String.format("%d", numToDisplay).toCharArray();
         // Right up to edge since 6 digits fills the available width
@@ -150,26 +158,18 @@ class Renderer {
 
     public void showGameOverScreen() {
         boolean[][] pixels = new boolean[DISPLAY_SHORT][DISPLAY_LONG];
-        int y = 0;
-        drawImage(pixels, GAME_OVER_TEXT, 0, y);
-        y += GAME_OVER_TEXT.getHeight() + 20;
-        drawImage(pixels, SCORE_TEXT, 0, y);
-        y += SCORE_TEXT.getHeight() + 2;
-        drawScore(pixels, y);
-        y += CHAR_HEIGHT + 2;
-        drawLevel(pixels, y);
+        drawImage(pixels, GAME_OVER_TEXT, 0, 0);
+        drawScoreAndLevelDisplays(pixels);
 
 //        debug_printPixels(pixels);
 
         renderOut.accept(convertPixelsToInts(pixels));
     }
 
-    private void drawLevel(boolean[][] pixels, int y) {
-        drawImage(pixels, LVL_TEXT, 0, y);
+    private void drawLevelNumber(boolean[][] pixels, int y) {
         char[] scoreDigits = String.format("%d", game.getLevel()).toCharArray();
         int lvlX = DISPLAY_SHORT - 2 - scoreDigits.length * CHAR_WIDTH;
-        int lvlY = y + LVL_TEXT.getHeight() + 2;
-        drawNumber(pixels, scoreDigits, lvlX, lvlY);
+        drawNumber(pixels, scoreDigits, lvlX, y);
     }
 
     private void debug_printPixels(boolean[][] pixels) {
