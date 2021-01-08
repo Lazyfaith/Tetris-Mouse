@@ -11,6 +11,7 @@ class Renderer {
         try {
             SCORE_CHAR_MAP = ImageIO.read(GameCore.class.getResource("/char_map_6x12.bmp"));
             GAME_OVER_TEXT = ImageIO.read(GameCore.class.getResource("/game_over.bmp"));
+            SCORE_TEXT = ImageIO.read(GameCore.class.getResource("/text_score.bmp"));
             LVL_TEXT = ImageIO.read(GameCore.class.getResource("/text_lvl.bmp"));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -21,6 +22,7 @@ class Renderer {
     private static final int CHAR_WIDTH = 6;
     private static final int CHAR_HEIGHT = 12;
     private static final BufferedImage GAME_OVER_TEXT;
+    private static final BufferedImage SCORE_TEXT;
     private static final BufferedImage LVL_TEXT;
 
     private static final int DISPLAY_SHORT = 36;
@@ -68,8 +70,9 @@ class Renderer {
         }
 
         // Draw score
-        int charsY = (GameCore.BOARD_H + 2) * blockSize;
-        drawScore(pixels, charsY);
+        int scoreY = (GameCore.BOARD_H + 2) * blockSize;
+        drawImage(pixels, SCORE_TEXT, 0, scoreY);
+        drawScore(pixels, scoreY + SCORE_TEXT.getHeight() + 2);
 
 //        debug_printPixels(pixels);
 
@@ -97,9 +100,10 @@ class Renderer {
 
     private void drawScore(boolean[][] pixels, int y) {
         int numToDisplay = Math.min(game.getScore(), 999999);
-        char[] numDigits = String.format("%06d", numToDisplay).toCharArray();
-        // Always display at x = 0 since the 6 digits can take up the whole width
-        drawNumber(pixels, numDigits, 0, y);
+        char[] numDigits = String.format("%d", numToDisplay).toCharArray();
+        // Right up to edge since 6 digits fills the available width
+        int x = DISPLAY_SHORT - numDigits.length * CHAR_WIDTH;
+        drawNumber(pixels, numDigits, x, y);
     }
 
     private void drawNumber(boolean[][] pixels, char[] numDigits, int x, int y) {
@@ -148,9 +152,11 @@ class Renderer {
         boolean[][] pixels = new boolean[DISPLAY_SHORT][DISPLAY_LONG];
         int y = 0;
         drawImage(pixels, GAME_OVER_TEXT, 0, y);
-        y += GAME_OVER_TEXT.getHeight() + 10;
+        y += GAME_OVER_TEXT.getHeight() + 20;
+        drawImage(pixels, SCORE_TEXT, 0, y);
+        y += SCORE_TEXT.getHeight() + 2;
         drawScore(pixels, y);
-        y += CHAR_HEIGHT + 10;
+        y += CHAR_HEIGHT + 2;
         drawLevel(pixels, y);
 
 //        debug_printPixels(pixels);
