@@ -45,6 +45,7 @@ public class GameManager {
                 try {
                     Thread.sleep(tickTime / 5);
                 } catch (InterruptedException e) {
+                    // Not expecting this to ever happen
                     e.printStackTrace();
                 }
             }

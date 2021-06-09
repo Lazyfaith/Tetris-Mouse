@@ -3,6 +3,7 @@ package gamesense;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -29,12 +30,16 @@ public class GameSenseApi {
         mapAdapter = moshi.adapter(map);
     }
 
-    public void initialise() throws Exception {
-        engineAddress = getEngineAddress();
+    public void initialise() throws IOException {
+        try {
+            engineAddress = getEngineAddress();
+        } catch (IOException e) {
+            throw new IOException("Could not get Game Sense engine address", e);
+        }
         System.out.println(engineAddress);
     }
 
-    private String getEngineAddress() throws Exception {
+    private String getEngineAddress() throws IOException {
         // TODO: exception thrown if file doesn't exist
         String fileContents = Files.readString(
                 Paths.get(System.getenv("PROGRAMDATA"), "SteelSeries/SteelSeries Engine 3/coreProps.json"));
@@ -43,7 +48,7 @@ public class GameSenseApi {
         return (String) result.get("address");
     }
 
-    public void registerGameAndEvents() throws Exception {
+    public void registerGameAndEvents() throws IOException, InterruptedException {
         String registerGameString = mapAdapter.toJson(Map.of(
                 "game", ENGINE_GAME_ID,
                 "game_display_name", "Tetris Mouse"
@@ -94,12 +99,12 @@ public class GameSenseApi {
         post("/bind_game_event", bindDisplayEvent);
     }
 
-    public void unregisterGame() throws Exception {
+    public void unregisterGame() throws IOException, InterruptedException {
         String removeGameString = mapAdapter.toJson(Map.of("game", ENGINE_GAME_ID));
         post("/remove_game", removeGameString);
     }
 
-    public void buzz() throws Exception {
+    public void buzz() throws IOException, InterruptedException {
         String str = mapAdapter.toJson(Map.of(
                 "game", ENGINE_GAME_ID,
                 "event", VIBRATE_EVENT,
@@ -111,7 +116,7 @@ public class GameSenseApi {
         post("/game_event", str);
     }
 
-    private void post(String end, String dataString) throws Exception {
+    private void post(String end, String dataString) throws IOException, InterruptedException {
         HttpRequest registerGame = buildPostRequest(end, dataString);
         var response = client.send(registerGame, HttpResponse.BodyHandlers.ofString());
         System.out.println(response.statusCode() + "\t" + response.uri());
@@ -143,7 +148,7 @@ public class GameSenseApi {
         );
     }
 
-    public void showImage(int[] imageData) throws Exception {
+    public void showImage(int[] imageData) throws IOException, InterruptedException {
         post("/game_event", mapAdapter.toJson(Map.of(
                 "game", ENGINE_GAME_ID,
                 "event", DISPLAY_EVENT,
