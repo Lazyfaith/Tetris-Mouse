@@ -99,13 +99,12 @@ public class GameSenseApi {
         post("/remove_game", removeGameString);
     }
 
-    //TODO: hardcode value? Handler currently isn't affected by it
-    public void buzz(int n) throws Exception {
+    public void buzz() throws Exception {
         String str = mapAdapter.toJson(Map.of(
                 "game", ENGINE_GAME_ID,
                 "event", VIBRATE_EVENT,
                 "data", Map.of(
-                        "value", n
+                        "value", 100
                 )
         ));
         System.out.println(str);

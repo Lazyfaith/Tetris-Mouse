@@ -30,7 +30,7 @@ class Main {
         gameSenseApi.initialise();
         gameSenseApi.registerGameAndEvents();
 
-        gameSenseApi.buzz(100);;
+        gameSenseApi.buzz();
 
         try {
             new GameManager(imageData1 -> {
