@@ -43,6 +43,8 @@ class Main {
                     e.printStackTrace();
                 }
             }).playNewGame();
+
+            gameSenseApi.buzz();
         } catch (Exception ex) {
             throw new RuntimeException("Uncaught error during running game", ex);
         } finally {
