@@ -34,9 +34,9 @@ class Main {
         gameSenseApi.registerGameAndEvents();
 
         try {
-            gameSenseApi.buzz();
+            gameSenseApi.longVibrate();
 
-            new GameManager(imageData1 -> {
+            new GameManager(new GameSenseVibrator(gameSenseApi), imageData1 -> {
                 try {
                     gameSenseApi.showImage(imageData1);
                 } catch (Exception e) {
@@ -44,7 +44,7 @@ class Main {
                 }
             }).playNewGame();
 
-            gameSenseApi.buzz();
+            gameSenseApi.longVibrate();
         } catch (Exception ex) {
             throw new RuntimeException("Uncaught error during running game", ex);
         } finally {

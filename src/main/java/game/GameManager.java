@@ -5,15 +5,17 @@ import java.util.function.Consumer;
 public class GameManager {
     private static final int TICKS_PER_SECOND = 15;
 
+    private final Vibrator vibrator;
     private final Consumer<int[]> renderOut;
     private final InputListener inputListener = new InputListener();
 
-    public GameManager(Consumer<int[]> renderOut) {
+    public GameManager(Vibrator vibrator, Consumer<int[]> renderOut) {
+        this.vibrator = vibrator;
         this.renderOut = renderOut;
     }
 
     public void playNewGame() {
-        GameCore activeGame = new GameCore();
+        GameCore activeGame = new GameCore(vibrator);
         inputListener.listenToMouseEvents();
         try {
             runGame(activeGame);

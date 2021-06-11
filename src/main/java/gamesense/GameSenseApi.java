@@ -16,7 +16,9 @@ import java.util.Map;
 
 public class GameSenseApi {
     private static final String ENGINE_GAME_ID = "TETRIS_MOUSE";
-    private static final String VIBRATE_EVENT = "VIBRATE";
+    private static final String SHORT_VIBRATE_EVENT = "SHORT_VIBRATE";
+    private static final String LONG_VIBRATE_EVENT = "LONG_VIBRATE";
+    private static final String GRAND_VIBRATE_EVENT = "GRAND_VIBRATE";
     private static final String DISPLAY_EVENT = "DISPLAY";
 
     private final HttpClient client = HttpClient.newHttpClient();
@@ -55,17 +57,16 @@ public class GameSenseApi {
         ));
         post("/game_metadata", registerGameString);
 
-        bindGameEvent(VIBRATE_EVENT, Map.of(
-                "device-type", "tactile",
-                "zone", "one",
-                "mode", "vibrate",
-                "pattern", List.of(
-                        // Limit is 5 steps in pattern, with customs counting as 2 steps
-                        // (idfk why the docs say the limit is 140. That's just wrong)
-                        customVibrateStep(200, 200),
-                        vibrateStep("ti_predefined_doubleclick_100", 350),
-                        customVibrateStep(600, 0)
-                )
+        bindVibrationGameEvent(SHORT_VIBRATE_EVENT, List.of(
+                customVibrateStep(200, 0)
+        ));
+        bindVibrationGameEvent(LONG_VIBRATE_EVENT, List.of(
+                customVibrateStep(600, 0)
+        ));
+        bindVibrationGameEvent(GRAND_VIBRATE_EVENT, List.of(
+                customVibrateStep(200, 200),
+                vibrateStep("ti_predefined_doubleclick_100", 350),
+                customVibrateStep(600, 0)
         ));
 
         bindGameEvent(DISPLAY_EVENT, Map.of(
@@ -78,6 +79,17 @@ public class GameSenseApi {
                                 "image-data", new int[(128 * 36) / 8] // Empty so it can be set by the actual events
                         )
                 )
+        ));
+    }
+
+    // Limit is 5 steps in pattern, with customs counting as 2 steps
+    // (idfk why the docs say the limit is 140. That's just wrong)
+    private void bindVibrationGameEvent(String eventName, List<Map<String, Object>> vibrationPattern) throws IOException, InterruptedException {
+        bindGameEvent(eventName, Map.of(
+                "device-type", "tactile",
+                "zone", "one",
+                "mode", "vibrate",
+                "pattern", vibrationPattern
         ));
     }
 
@@ -97,10 +109,22 @@ public class GameSenseApi {
         post("/remove_game", removeGameString);
     }
 
-    public void buzz() throws IOException, InterruptedException {
+    public void shortVibrate() throws IOException, InterruptedException {
+        postVibrationEvent(SHORT_VIBRATE_EVENT);
+    }
+
+    public void longVibrate() throws IOException, InterruptedException {
+        postVibrationEvent(LONG_VIBRATE_EVENT);
+    }
+
+    public void grandVibrate() throws IOException, InterruptedException {
+        postVibrationEvent(GRAND_VIBRATE_EVENT);
+    }
+
+    private void postVibrationEvent(String eventName) throws IOException, InterruptedException {
         String str = mapAdapter.toJson(Map.of(
                 "game", ENGINE_GAME_ID,
-                "event", VIBRATE_EVENT,
+                "event", eventName,
                 "data", Map.of(
                         "value", 100
                 )

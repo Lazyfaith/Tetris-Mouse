@@ -28,6 +28,7 @@ class GameCore {
     private static final int MAX_LEVEL = INITIAL_FALL_DELAY - 1;
 
     private final Random rng = new Random();
+    private final Vibrator vibrator;
 
     // [0, 0] is top left corner
     private boolean[][] board = new boolean[BOARD_W][BOARD_H];
@@ -40,6 +41,10 @@ class GameCore {
     private int level = 0;
     private int rowsCleared = 0;
     private int rowsSoftDropped = 0;
+
+    public GameCore(Vibrator vibrator) {
+        this.vibrator = vibrator;
+    }
 
     public TickResult tick(NewUserInput input) {
         boolean renderChange = false;
@@ -71,6 +76,7 @@ class GameCore {
             active = null;
 
             int rowsRemoved = clearFullRowsFromBoard();
+            vibrateForRowsRemoved(rowsRemoved);
             rowsCleared += rowsRemoved;
             score += baseScoreForRowsRemoved(rowsRemoved) * (level + 1) + rowsSoftDropped;
             level = Math.min(rowsCleared / 5, MAX_LEVEL);
@@ -215,6 +221,14 @@ class GameCore {
 
         board = newBoard;
         return writeRow - readRow;
+    }
+
+    private void vibrateForRowsRemoved(int numRemoved) {
+        if (numRemoved == 4) {
+            vibrator.doGrandBuzz();
+        } else if(numRemoved > 0) {
+            vibrator.doShortBuzz();
+        }
     }
 
     private int baseScoreForRowsRemoved(int numRemoved) {
