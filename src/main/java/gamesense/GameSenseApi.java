@@ -55,48 +55,41 @@ public class GameSenseApi {
         ));
         post("/game_metadata", registerGameString);
 
-        String bindVibrateEvent = mapAdapter.toJson(Map.of(
-                "game", ENGINE_GAME_ID,
-                "event", VIBRATE_EVENT,
-                "value_optional", true,
-                "handlers", List.of(
-                        Map.of(
-                                "device-type", "tactile",
-                                "zone", "one",
-                                "mode", "vibrate",
-                                "pattern", List.of(
-                                        // Limit is 5 steps in pattern, with customs counting as 2 steps
-                                        // (idfk why the docs say the limit is 140. That's just wrong)
-                                        customVibrateStep(200, 200),
-                                        vibrateStep("ti_predefined_doubleclick_100", 350),
-                                        customVibrateStep(600, 0)
-                                )
-                        )
+        bindGameEvent(VIBRATE_EVENT, Map.of(
+                "device-type", "tactile",
+                "zone", "one",
+                "mode", "vibrate",
+                "pattern", List.of(
+                        // Limit is 5 steps in pattern, with customs counting as 2 steps
+                        // (idfk why the docs say the limit is 140. That's just wrong)
+                        customVibrateStep(200, 200),
+                        vibrateStep("ti_predefined_doubleclick_100", 350),
+                        customVibrateStep(600, 0)
                 )
         ));
-        System.out.println(bindVibrateEvent);
-        post("/bind_game_event", bindVibrateEvent);
 
-        String bindDisplayEvent = mapAdapter.toJson(Map.of(
-                "game", ENGINE_GAME_ID,
-                "event", DISPLAY_EVENT,
-                "value_optional", true,
-                "handlers", List.of(
+        bindGameEvent(DISPLAY_EVENT, Map.of(
+                "device-type", "screened-128x36",
+                "zone", "one",
+                "mode", "screen",
+                "datas", List.of(
                         Map.of(
-                                "device-type", "screened-128x36",
-                                "zone", "one",
-                                "mode", "screen",
-                                "datas", List.of(
-                                        Map.of(
-                                                "has-text", false,
-                                                "image-data", new int[(128 * 36) / 8] // Empty so it can be set by the actual events
-                                        )
-                                )
+                                "has-text", false,
+                                "image-data", new int[(128 * 36) / 8] // Empty so it can be set by the actual events
                         )
                 )
         ));
-        System.out.println(bindDisplayEvent);
-        post("/bind_game_event", bindDisplayEvent);
+    }
+
+    private void bindGameEvent(String eventName, Map<String, Object> handler) throws IOException, InterruptedException {
+        String bindEvent = mapAdapter.toJson(Map.of(
+                "game", ENGINE_GAME_ID,
+                "event", eventName,
+                "value_optional", true,
+                "handlers", List.of(handler)
+        ));
+        System.out.println(bindEvent);
+        post("/bind_game_event", bindEvent);
     }
 
     public void unregisterGame() throws IOException, InterruptedException {
