@@ -73,7 +73,7 @@ class GameCore {
             int rowsRemoved = clearFullRowsFromBoard();
             rowsCleared += rowsRemoved;
             score += baseScoreForRowsRemoved(rowsRemoved) * (level + 1) + rowsSoftDropped;
-            level = Math.min(rowsCleared / 10, MAX_LEVEL);
+            level = Math.min(rowsCleared / 5, MAX_LEVEL);
             rowsSoftDropped = 0;
         } else {
             activeY++;
